@@ -26,7 +26,7 @@ def predict_static_image(image, model, labels, detector):
         raise ValueError("Gambar tidak valid atau gagal dibaca (image=None)")
 
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    frame_with_drawing, bbox = detector.find_hand(rgb_image)
+    frame_with_drawing, bbox = detector.find_hand(image)
 
     if bbox:
         x1, y1, x2, y2 = bbox

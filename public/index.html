@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signify ML Tester</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="container">
+        <h1>Signify ML Service Tester</h1>
+
+        <section>
+            <h2>🖼️ Image Prediction</h2>
+            <input type="file" id="imageInput" accept="image/png, image/jpeg" />
+            <button onclick="predictImage()">Predict Image</button>
+            <p id="imageResult"></p>
+            <img id="imagePreview" src="" alt="" style="max-width: 300px; display: block; margin-top: 10px;" />
+        </section>
+
+        <section>
+            <h2>🎥 Video Prediction</h2>
+            <input type="file" id="videoInput" accept="video/mp4, video/avi" />
+            <button onclick="predictVideo()">Predict Video</button>
+            <p id="videoResult"></p>
+        </section>
+
+        <section>
+            <h2>📡 Realtime Prediction (Webcam)</h2>
+            <label for="deviceSelect">Camera:</label>
+            <select id="deviceSelect"></select>
+            <br /><br />
+            <video id="video" autoplay muted style="width: 320px; height: 240px; border: 1px solid #ccc;"></video><br />
+            <button onclick="startRealtime()">Start Realtime</button>
+            <button onclick="stopRealtime()">Stop</button>
+            <p id="realtimeResult"></p>
+        </section>
+    </div>
+
+    <script>
+        const BASE_URL = "http://localhost:8000";
+
+        async function predictImage() {
+            const file = document.getElementById("imageInput").files[0];
+            if (!file) return alert("Upload gambar dulu!");
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch(`${BASE_URL}/predict/image`, {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await res.json();
+            document.getElementById("imageResult").innerText =
+                data.status === "success"
+                    ? `Prediction: ${data.prediction.label}`
+                    : "Prediction failed.";
+
+            document.getElementById("imagePreview").src = data.image_url || "";
+        }
+
+        async function predictVideo() {
+            const file = document.getElementById("videoInput").files[0];
+            if (!file) return alert("Upload video dulu!");
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch(`${BASE_URL}/predict/video`, {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await res.json();
+            document.getElementById("videoResult").innerText =
+                data.status === "success"
+                    ? `Prediction: ${data.prediction.label}`
+                    : "Prediction failed.";
+        }
+
+        let webcamInterval, ws, currentStream;
+
+        async function listDevices() {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === "videoinput");
+
+            const select = document.getElementById("deviceSelect");
+            select.innerHTML = "";
+            videoDevices.forEach((device, index) => {
+                const option = document.createElement("option");
+                option.value = device.deviceId;
+                option.text = device.label || `Camera ${index + 1}`;
+                select.appendChild(option);
+            });
+        }
+
+        async function startRealtime() {
+            stopRealtime(); // clear old
+
+            const selectedDeviceId = document.getElementById("deviceSelect").value;
+            const video = document.getElementById("video");
+
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined },
+            });
+            currentStream = stream;
+            video.srcObject = stream;
+
+            ws = new WebSocket(`ws://${location.hostname}:8000/ws/realtime`);
+
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            webcamInterval = setInterval(() => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+
+                canvas.toBlob(blob => {
+                    if (blob && ws.readyState === 1) {
+                        blob.arrayBuffer().then(buffer => {
+                            ws.send(buffer);
+                        });
+                    }
+                }, "image/jpeg");
+            }, 500);
+
+            ws.onmessage = event => {
+                const data = JSON.parse(event.data);
+                document.getElementById("realtimeResult").innerText =
+                    data.status === "success"
+                        ? `Prediction: ${data.prediction.label}`
+                        : data.error || "Error";
+            };
+        }
+
+        function stopRealtime() {
+            if (webcamInterval) clearInterval(webcamInterval);
+            if (ws) ws.close();
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById("realtimeResult").innerText = "";
+            document.getElementById("video").srcObject = null;
+        }
+
+        // Load available cameras when page loads
+        window.addEventListener("load", listDevices);
+    </script>
+</body>
+
+</html>
