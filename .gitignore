@@ -1,0 +1,7 @@
+venv
+models/3dcnn_efficient.h5
+models/efficientnet_signify.h5
+__
+__pycache__/
+
+serviceAccount.json
