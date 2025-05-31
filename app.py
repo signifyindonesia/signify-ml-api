@@ -95,6 +95,8 @@ async def predict_video_endpoint(file: UploadFile = File(...)):
 @app.websocket("/ws/realtime")
 async def websocket_realtime(websocket: WebSocket):
     await websocket.accept()
+    print("[INFO] Realtime WebSocket connected.")
+    
     try:
         while True:
             data = await websocket.receive_bytes()

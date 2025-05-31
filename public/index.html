@@ -110,7 +110,7 @@
             currentStream = stream;
             video.srcObject = stream;
 
-            ws = new WebSocket(`ws://${location.hostname}:8000/ws/realtime`);
+            ws = new WebSocket(`ws://localhost:8000/ws/realtime`);
 
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
