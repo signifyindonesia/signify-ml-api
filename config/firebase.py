@@ -29,10 +29,7 @@ def download_model_if_needed(model_path: str, firebase_path: str):
     size = blob.size
 
     with open(model_path, "wb") as f:
-        with tqdm(total=size, unit='B', unit_scale=True, desc=os.path.basename(model_path)) as pbar:
-            def progress(current, total):
-                pbar.update(current - pbar.n)
-            blob.download_to_file(f, raw_download=True, timeout=300, start=0, end=None, progress_callback=progress)
+        blob.download_to_file(f)
 
     print(f"[INFO] Selesai mengunduh: {model_path}")
 

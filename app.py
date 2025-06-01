@@ -51,7 +51,7 @@ async def predict_image(file: UploadFile = File(...)):
         if image is None:
             raise ValueError("Gagal membaca gambar. Format mungkin tidak valid atau file rusak.")
 
-        prediction = predict_static_image(image, image_model, image_labels, image_detector)
+        prediction = predict_static_image(image, image_model, image_labels)
         image_url = upload_image_to_firebase(tmp_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gagal prediksi atau upload: {str(e)}")

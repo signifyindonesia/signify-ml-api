@@ -2,11 +2,12 @@ import cv2
 import mediapipe as mp
 
 class HandDetector:
-    def __init__(self, max_hands=1, detection_confidence=0.7, draw_landmarks=True):
+    def __init__(self, max_hands=1, detection_confidence=0.7, draw_landmarks=False):
         self.max_hands = max_hands
         self.draw_landmarks = draw_landmarks
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
+            static_image_mode=False,  # realtime mode
             max_num_hands=max_hands,
             min_detection_confidence=detection_confidence
         )
@@ -24,10 +25,16 @@ class HandDetector:
                 h, w, _ = frame.shape
                 x_list = [lm.x * w for lm in handLms.landmark]
                 y_list = [lm.y * h for lm in handLms.landmark]
-                x_min = max(int(min(x_list)) - 20, 0)
-                y_min = max(int(min(y_list)) - 20, 0)
-                x_max = min(int(max(x_list)) + 20, w)
-                y_max = min(int(max(y_list)) + 20, h)
+
+                padding = 30
+                x_min = max(int(min(x_list)) - padding, 0)
+                y_min = max(int(min(y_list)) - padding, 0)
+                x_max = min(int(max(x_list)) + padding, w)
+                y_max = min(int(max(y_list)) + padding, h)
+
+                if (x_max - x_min) < 40 or (y_max - y_min) < 40:
+                    continue
+
                 bbox = (x_min, y_min, x_max, y_max)
 
                 if return_landmarks:
@@ -35,6 +42,7 @@ class HandDetector:
 
                 if self.draw_landmarks:
                     self.mp_draw.draw_landmarks(frame, handLms, self.mp_hands.HAND_CONNECTIONS)
-                break  # hanya tangan pertama
+
+                break  # hanya satu tangan
 
         return (frame, bbox) if not return_landmarks else (frame, bbox, landmarks)
