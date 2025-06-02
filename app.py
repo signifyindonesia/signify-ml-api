@@ -114,9 +114,13 @@ async def websocket_realtime(websocket: WebSocket):
             label, confidence = predict_frame(frame, realtime_model, realtime_labels, realtime_detector)
 
             await websocket.send_json({
-                "prediction": label,
-                "confidence": confidence
+                "status": "success",
+                "prediction": {
+                    "label": label,
+                    "confidence": confidence
+                }
             })
+
     except WebSocketDisconnect:
         print("[INFO] Client disconnected from realtime websocket")
     except Exception as e:

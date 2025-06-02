@@ -7,7 +7,7 @@ from utils.hand_detector import HandDetector
 from config.firebase import download_model_if_needed
 
 MODEL_PATH = "models/efficientnet_signify_v2.h5"
-FIREBASE_MODEL_PATH = "models/efficientnet_signify.h5"
+FIREBASE_MODEL_PATH = "models/efficientnet_signify_v2.h5"
 LABELS_PATH = "labels/label_map.json"
 CONFIDENCE_THRESHOLD = 0.5
 
